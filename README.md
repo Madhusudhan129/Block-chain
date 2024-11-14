@@ -1,8 +1,6 @@
 # Block-chain
 # Solidity Smart Contract - Security Fixes
 
-This README documents the issues identified in a Solidity smart contract, along with fixes that enhance security, readability, and transparency for decentralized finance (DeFi) applications.
-
 ## Issues and Fixes
 
 ### 1. Reentrancy Vulnerability
@@ -46,5 +44,28 @@ The `balances` mapping lacks an explicit `private` visibility modifier, even tho
 
 **Fix:**
 - Add the `private` keyword to the `balances` mapping:
+  ```solidity
+  mapping(address => uint256) private balances;
+
+
+
+## Explanation of Changes
+
+### Reentrancy Protection
+- In the `withdraw` function, the balance is updated with `balances[msg.sender] -= amount;` before transferring funds using `payable(msg.sender).transfer(amount);`. This reordering mitigates reentrancy attacks by following the checks-effects-interactions pattern, reducing the risk of recursive calls that could drain funds.
+
+### Underflow Protection
+- The `withdraw` function now includes `require(amount <= balances[msg.sender], "Insufficient balance.");`, ensuring that users cannot withdraw more than their available balance, preventing underflows.
+- Both `deposit` and `withdraw` functions have added zero-amount checks to avoid unnecessary transactions:
+  - `require(msg.value > 0, "Deposit amount must be greater than zero.");` in `deposit`.
+  - `require(amount > 0, "Withdraw amount must be greater than zero.");` in `withdraw`.
+
+### Event Emission
+- `Deposit` and `Withdraw` events have been added and are now emitted in the respective functions, enabling tracking of deposits and withdrawals:
+  - `emit Deposit(msg.sender, msg.value);` in the `deposit` function.
+  - `emit Withdraw(msg.sender, amount);` in the `withdraw` function.
+
+### Explicit Visibility
+- The `balances` mapping now explicitly includes `private` visibility, enhancing readability by clearly indicating restricted access:
   ```solidity
   mapping(address => uint256) private balances;
